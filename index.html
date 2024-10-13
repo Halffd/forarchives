@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Archive</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+             padding: 20px; 
+             background-color: black;
+             color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">Archive Search</h1>
+        <input type="text" id="searchQuery" class="form-control mb-2" placeholder="Enter search query">
+        <button id="searchButton" class="btn btn-primary">Search</button>
+        <div id="content" class="mt-4"></div>
+    </div>
+
+    <script>
+        document.getElementById('searchButton').addEventListener('click', async () => {
+            const query = document.getElementById('searchQuery').value;
+            const response = await fetch('/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query })
+            });
+            const data = await response.json();
+            const contentDiv = document.getElementById('content');
+            contentDiv.innerHTML = '';
+            data.results.forEach(item => {
+                const div = document.createElement('div');
+                div.innerHTML = `<strong>${item.title}</strong><br/>`;
+                contentDiv.appendChild(div);
+            });
+        });
+    </script>
+</body>
+</html>
