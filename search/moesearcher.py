@@ -18,37 +18,40 @@ class MoeSearcher:
         self.utilities = Utilities()
         print = self.utilities.printLog
     def getText(self, posts):
-        result = []
-        if isinstance(posts, Thread):
-            i = [posts.op, *posts.posts]
-            return self.getText(i)
-        elif not isinstance(posts, list):
-            for k in posts:
-                i = posts[k].posts
-                if i:
-                    if isinstance(i, list):
-                        return self.getText(i)
-                    text = i.comment.replace('\n', '\n')
+        try:
+            result = []
+            if isinstance(posts, Thread):
+                i = [posts.op, *posts.posts]
+                return self.getText(i)
+            elif not isinstance(posts, list):
+                for k in posts:
+                    i = posts[k].posts
+                    if i:
+                        if isinstance(i, list):
+                            return self.getText(i)
+                        text = i.comment.replace('\n', '\n')
+                        if text:
+                            result.append(text)
+            else:
+                if len(posts) > 0:
+                    if posts[0].thread_num:
+                        result = [f'Thread: {posts[0].thread_num}']
+                for i in posts:
+                    text = ''
+                    if i.title:
+                        text += i.title + '\n'
+                    if i.poster_country_name:
+                        country = ' ' + i.poster_country_name
+                    else:
+                        country = ''
+                    text += f'{i.num} {i.fourchan_date}{country}\n{i.comment}'
+                    
                     if text:
                         result.append(text)
-        else:
-            if len(posts) > 0:
-                if posts[0].thread_num:
-                    result = [f'Thread: {posts[0].thread_num}']
-            for i in posts:
-                text = ''
-                if i.title:
-                    text += i.title + '\n'
-                if i.poster_country_name:
-                    country = ' ' + i.poster_country_name
-                else:
-                    country = ''
-                text += f'{i.num} {i.fourchan_date}{country}\n{i.comment}'
-                
-                if text:
-                    result.append(text)
-        return result
-
+            return result
+        except Exception as e:
+            print(e)
+            return None
     async def fetch_search_result(self, session, archive, board, page, **kwargs):
         return await search(archive, board=board, page=page, **kwargs)
     async def search(self, archive=0, **kwargs):
@@ -102,13 +105,21 @@ class MoeSearcher:
         text += kwargs.pop('-text', '')
         text += kwargs.pop('-subject', '')
         site = self.utilities.key_by_value(self.archivers, archive_url)
-        
+        posts_dicts = self.utilities.process_posts(posts)
         # Log the search results
+        self.utilities.json(
+            posts_dicts,
+            site=site,
+            board=board,
+            query=text,
+            folderName='search'
+        )
         self.utilities.log(
             message=self.toText(posts),
             site=site,
             board=board,
-            query=text
+            query=text,
+            folderName='search'
         )
         
         return posts
@@ -157,11 +168,11 @@ class MoeSearcher:
                 thread_tasks.append(asyncio.create_task(self.fetch_thread(session, archive_url, board, threadN, semaphore, delay, **kwargs)))
 
             threads = await asyncio.gather(*thread_tasks)
-
+            subjs = []
             for thr in threads:
                 texts = self.getText(thr)
                 searched = self.utilities.regex_search(texts, searchText, case)
-
+                subjs.append(texts)
                 if searched:
                     searchedCount = len(searched)
                     searchesCount += searchedCount
@@ -171,7 +182,13 @@ class MoeSearcher:
             if result != []:
                 result.insert(0, f'Total Count: {searchesCount} in {len(result)} threads')
             self.utilities.log(f"Search in subject '{subject}' returned {searchesCount} results.\n{self.formatText(result)}", 
-                            site=self.getArchiveName(archive) + '_subjects', board=board, query=searchText + '_' + subject)
+                            site=self.getArchiveName(archive) + '_searches', board=board, query=searchText + '_' + subject, folderName='search-subjects')
+            self.utilities.log(f"Search in subject '{subject}' returned {searchesCount} results.\n{self.formatText(subjs)}", 
+                            site=self.getArchiveName(archive) + '_subjects', board=board, query=searchText + '_' + subject, folderName='subjects')
+            self.utilities.json(subjs, 
+                            site=self.getArchiveName(archive) + '_searches', board=board, query=searchText + '_' + subject, folderName='search-subjects')
+            self.utilities.json(result, 
+                            site=self.getArchiveName(archive) + '_subjects', board=board, query=searchText + '_' + subject, folderName='subjects')
             return result
 
     async def fetch_thread(self, session, archive_url, board, thread_num, semaphore, delay, **kwargs):
@@ -243,14 +260,18 @@ class MoeSearcher:
                     "results": search_result,
                     "text": self.getText(search_result)
                 })
-        self.utilities.log(f'Searched {query}, {len(results)} found\n', board=query.get('board', ''), query=query.get('text', ''))
+        self.utilities.log(f'Searched {query}, {len(results)} found\n', board=query.get('board', ''), query=query.get('text', ''), folderName='search-multi')
         for i in results:
             posts = i['text']
             posts = '\n'.join(posts)
-            self.utilities.log(f'/{i['board']}/\n{posts}', board=query.get('board', ''), query=query.get('text', ''))
+            self.utilities.log(f'/{i['board']}/\n{posts}', board=query.get('board', ''), query=query.get('text', ''), folderName='multi')
         grouped_results = self.groupArchives(results)
+        self.utilities.json(grouped_results, 
+                           site="multi", board=query.get('board', '_'),
+                           query=query.get('subject', 'N/A'), folderName='multi')
         self.utilities.log(f"Multi-archive search returned results from {len(grouped_results)} archives.", 
-                           site="multi", board=query.get('board', '_'), query=query.get('subject', 'N/A'))
+                           site="multi", board=query.get('board', '_'),
+                           query=query.get('subject', 'N/A'), folderName='multi')
         return grouped_results
 
     async def calculate_statistics(self, grouped_results, text='', subject=None, specific_board=None, specific_date=['before', None]):
@@ -286,7 +307,7 @@ class MoeSearcher:
         return total_posts, posts_with_text, percentage, mean_date
     def check_date(self, post_date, specific_date):
         if specific_date == None:
-            return None
+            return 0
         if specific_date[0] == 'before':
             return post_date < specific_date[1]
         elif specific_date[0] == 'after':
@@ -354,16 +375,16 @@ class MoeSearcher:
 if __name__ == '__main__':
     searcher = MoeSearcher()
 
-    results = searcher.qSearch(0, text='"neuro sama"', limit=35)
+    results = searcher.qSearch(0, text='trocr')
     #results = searcher.qSearch(0, text='aparecida', limit=35)
     #print(results)
     #print(searcher.getText(results))
     
-    results = asyncio.run(searcher.searchInSubject(0, subject='swarm', searchText='binomial|bayes|underfitting', limit=50))
+    results = asyncio.run(searcher.searchInSubject(0, subject='', searchText='"film theory', board='a'))
     print(results)
 
-    query = 'binomial pull|gacha|lootbox|game'
-    grouped_results = asyncio.run(searcher.multiArchiveSearch([0, 1], text=query, limit=50))
+    query = 'binomial|pull|gacha|lootbox|game'
+    grouped_results = asyncio.run(searcher.multiArchiveSearch([0, 1], text=query))
     
     total_posts, posts_with_text, percentage, mean_date = asyncio.run(searcher.calculate_statistics(grouped_results, '+'))
     print(f"Total posts: {total_posts}")

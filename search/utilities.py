@@ -5,6 +5,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import os
 import sys
+import json
 
 class Utilities:
     def __init__(self, log_dir="logs"):
@@ -38,20 +39,48 @@ class Utilities:
          # Logging setup if a log file is provided
         if log_file:
             log_file = self.clean_filename(log_file)
-            log_file = self.get_log_file(log_file)
-            logging.basicConfig(filename=log_file, level=logging.INFO, encoding='utf-8',
-                                format='%(asctime)s - %(levelname)s - %(message)s')
-            logging.info(*message)
-
+            self.log(message, query=log_file,folderName='print',include_date=True,level='INFO')
         # Print to console if print=True
         if print_to_console:
             self.print(*message, sep=sep, end=end, file=file, flush=flush) 
-    def log(self, message, board = '', query = '', site = ''):
+    def log(self, message, board='', query='', site='', folderName = '', mode='a', encoding='utf-8', include_date=False, level='', isJson=False):
         query = self.clean_filename(query)
-        log_file = self.get_log_file(site, board, query)
-        logging.basicConfig(filename=log_file, level=logging.INFO, encoding='utf-8',
-                            format='%(asctime)s - %(levelname)s - %(message)s')
-        logging.info(message)
+        log_file = self.get_log_file(site, board, query, folderName)
+        
+        # Prepare the log entry
+        log_entry = self.format_log_entry(message, level, include_date)
+        
+        # Write to the log file
+        with open(log_file, mode=mode, encoding=encoding) as f:
+            f.write(log_entry + '\n')
+    
+        if isJson:
+            self.json(*message,board=board,query=query,folderName=folderName, mode=mode, encoding=encoding, include_date=include_date, level=level)
+    def json(self, data='', board='', query='', site='', folderName='', mode='a', encoding='utf-8', include_date=False, level=''):
+        queryN = self.clean_filename(query)
+        log_file = self.get_log_file(site, board, 'json/' + queryN, folderName)
+
+        # Create a JSON object for the log entry
+        log_data = {
+            "data": data,
+            "board": board,
+            "query": query,
+            "site": site,
+            "folderName": folderName,
+            "level": level,
+            "timestamp": datetime.now().isoformat() if include_date else None
+        }
+        # Write to the log file as JSON
+        with open(log_file, mode=mode, encoding=encoding) as f:
+            json.dump(log_data, f)
+            f.write('\n')  # Ensure each log entry is on a new line
+    def format_log_entry(self, message, level='INFO', include_date=True):
+        # Get the current timestamp if include_date is True
+        timestamp = datetime.now().strftime('%Y-%m-%d') if include_date else ''
+        date_part = f"{timestamp} - " if include_date else ''
+        if level:
+            level  += ' - '
+        return f"{date_part}{level}{message}"
     def clean_filename(self, filename):
         # Remove leading/trailing spaces
         filename = filename.strip()
@@ -67,16 +96,20 @@ class Utilities:
         if cleaned_filename[-1] == ".":
             cleaned_filename = cleaned_filename[:-1]
         return cleaned_filename
-    def get_log_file(self, site, board = '', query = ''):
+    def get_log_file(self, site, board = '', query = '', folderName = '', fileType=''):
         today = datetime.now()
         year = today.strftime("%Y")
         month = today.strftime("%m")
         day = today.strftime("%d")
-        log_file_path = os.path.join(self.log_dir, year, month, day)
+        jsonF = 'json/' in query
+        if jsonF:
+            query = query.replace('json/','')
+        path = [self.log_dir, f'{year}-{month}', day] if not jsonF else [self.log_dir, 'json']
+        path.append(folderName)
+        log_file_path = os.path.join(*path)
 
         # Create directories if they do not exist
         os.makedirs(log_file_path, exist_ok=True)
-
         # Create the log file with the specified naming convention
         params= []
         if site:
@@ -85,12 +118,17 @@ class Utilities:
             params.append(board)
         if query:
             params.append(query)
-
+        
         # Join the parameters with hyphens
         params_str = '-'.join(params)
-
+        # Get the current date and time
+        now = datetime.now()
+        # Format the string
+        formatted_string = now.strftime('%Y-%d-%m')
         # Create the full log file name
-        log_file_name = f"{today.strftime('%Y-%m-%d')}-{params_str}.log" if params_str else f"{today.strftime('%Y-%m-%d')}.log"
+        if fileType == '':
+            fileType = 'json' if jsonF else 'log'
+        log_file_name = f"{formatted_string}-{params_str}.{fileType}" if params_str else f"{formatted_string}.{fileType}"
 
         return os.path.join(log_file_path, log_file_name)
     def key_by_value(self, d, value):
@@ -181,3 +219,38 @@ class Utilities:
         plt.xticks(rotation=45)
         plt.tight_layout()  # Adjust layout to prevent overlap
         plt.show()
+    def serialize_object(self, obj):
+        """Recursively convert an object to a JSON-serializable dictionary."""
+        if isinstance(obj, dict):
+            return {k: self.serialize_object(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self.serialize_object(item) for item in obj]
+        elif hasattr(obj, '__dict__'):
+            return self.serialize_object(vars(obj))  # Use vars() for better compatibility
+        else:
+            return obj  # Return the object as-is if it's already a serializable type
+
+    def process_posts(self, posts):
+        # Initialize posts_dicts
+        posts_dicts = []
+
+        # Check if posts is a list or a dict
+        if isinstance(posts, dict):
+            # If it's a dictionary, convert it to a list of its items
+            posts_dicts = [self.serialize_object({k: v for k, v in posts.items()})]
+        elif isinstance(posts, list):
+            # If it's a list, iterate over the items
+            for post in posts:
+                posts_dicts.append(self.serialize_object(post))
+        else:
+            # Handle case where posts is a string or some other type
+            posts_dicts.append(self.serialize_object(posts))
+
+        return posts_dicts  # Return the processed posts
+if __name__ == '__main__':
+    arr = input('list (a_b) ')
+    arr = list(arr.split('_'))
+    util = Utilities()
+    s = input('Search ')
+    r = util.regex_search(arr, s)
+    print(r)

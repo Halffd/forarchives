@@ -7,20 +7,29 @@ FOOLFUUKA_API_URL = "%s/_/api/chan"
 
 async def fetch_json(session, url, params=None):
     async with session.get(url, params=params) as req:
+        """if req.status < 300:
+            try:
+                print(f"Error fetching {url}: {req.status} {await req.text()}")
+            except Exception as e:
+                print(e + f"\nError fetching {url}: {req.status}")
+            return None  # or raise an exception"""
         content_type = req.headers.get('Content-Type', '')
-        
-        if 'application/json' in content_type:
-            res = await req.json()
-            if ArchiveException.is_error(res):
-                # print(f'ArchiveException: {res}')
+        try:
+            if 'application/json' in content_type:
+                res = await req.json()
+                if ArchiveException.is_error(res):
+                    # print(f'ArchiveException: {res}')
+                    return None
+                return res
+            else:
+                print(f"Unexpected content type: {content_type}")
+                print(f"Response status: {req.status}")
+                html_content = await req.text()  # Get the response text for debugging
+                print(f"Response content: {html_content}")
                 return None
-            return res
-        else:
-            print(f"Unexpected content type: {content_type}")
-            print(f"Response status: {req.status}")
-            html_content = await req.text()  # Get the response text for debugging
-            print(f"Response content: {html_content}")
-            return None
+        except Exception as e:
+            print(f'Error in fetch: {e}')
+            return e
 async def index(archiver_url, board, page=1):
     async with aiohttp.ClientSession() as session:
         url = f"{FOOLFUUKA_API_URL % archiver_url}/index"
