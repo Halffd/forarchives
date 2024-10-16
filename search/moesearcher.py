@@ -5,8 +5,13 @@ import asyncio
 import aiohttp
 from datetime import datetime
 from utilities import Utilities
+import pandas as pd
+
+import pandas as pd
+import json
 
 class MoeSearcher:
+
     def __init__(self):
         global print
         self.archivers = {
@@ -17,7 +22,175 @@ class MoeSearcher:
         }
         self.utilities = Utilities()
         print = self.utilities.printLog
-    def getText(self, posts):
+    
+    async def dumpster(self, posts):
+        """Extract relevant data from posts and return as a DataFrame."""
+        data = [
+            {
+                "timestamp": post.timestamp,
+                "comment": post.comment,
+                "country": post.poster_country_name,
+                "thread_num": getattr(post, 'thread_num', None),
+                "board": post.board.short_name if post.board else None
+            }
+            for post in posts
+        ]
+        
+        # Create DataFrame from extracted data
+        df = pd.DataFrame(data)
+        return df
+
+    async def search_and_dumpster(self, **kwargs):
+        """Perform a search and process the results using the dumpster function."""
+        posts = await self.search(**kwargs)
+        df = await self.dumpster(posts)
+
+        # Log the DataFrame as both text and JSON
+        self.log_dataframe(df, query=kwargs.get('text', ''), folderName='dumpster')
+        return df
+
+    def log_dataframe(self, df, query='', folderName=''):
+        """Log DataFrame contents to both JSON and plain text formats."""
+        log_file = self.utilities.get_log_file('dumpster', '', query, folderName)
+        obj = df.to_json(f"{log_file}.json", orient='records', lines=True, date_format='iso', force_ascii=False, ensure_ascii=False)
+        # Save as plain text for readability
+        self.utilities.log(df.to_string(), query=query,folderName=folderName)
+        self.utilities.json(obj, query=query,folderName=folderName)
+        print(f"Data logged to {log_file}")
+    def getArchive(self, archive=0):
+        archiver_names = list(self.archivers.keys())
+        if isinstance(archive, int):
+            if 0 <= archive < len(archiver_names):
+                return self.archivers[archiver_names[archive]]
+            raise IndexError("Archive index out of range.")
+        return archive
+
+    def posts_to_dataframe(self, posts):
+        """Convert post data to a DataFrame."""
+        if not posts:
+            return pd.DataFrame()
+        df = pd.DataFrame(self.utilities.process_posts(posts))
+        self.log_dataframe(df, query=kwargs.get('text', ''), folderName='dumpster')
+        return df
+
+    async def fetch_search_result(self, session, archive, board, page, **kwargs):
+        return await search(archive, board=board, page=page, **kwargs)
+    async def search(self, archive: int = 0, **kwargs) -> pd.DataFrame:
+        """Perform search across a specific archive."""
+        posts = []
+        limit = kwargs.pop('limit', None)
+        board = kwargs.pop('board', '_')
+        delay = kwargs.pop('delay', 3.0)
+        semaphore_limit = kwargs.pop('semaphore', 5)
+
+        archive_url = self.getArchive(archive)
+        semaphore = asyncio.Semaphore(semaphore_limit)
+
+        async with aiohttp.ClientSession() as session:
+            page = 1  # Start with page 1
+
+            while True:
+                # Create new tasks within each iteration to avoid reuse errors
+                tasks = [
+                    asyncio.create_task(
+                        self.fetch_search_result(session, archive_url, board, page + i, **kwargs)
+                    )
+                    for i in range(semaphore_limit)
+                ]
+
+                # Gather the results from all tasks
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+
+                # Collect only valid results
+                valid_results = [res for res in results if isinstance(res, list) and res]
+
+                if not valid_results:
+                    break  # Exit if no more results
+
+                posts.extend(valid_results)
+
+                if limit and len(posts) >= limit:
+                    return self.posts_to_dataframe(posts[:limit])
+
+                page += semaphore_limit  # Increment the page number by semaphore limit
+
+                # Introduce a non-blocking delay
+                await asyncio.sleep(delay)
+
+        return self.posts_to_dataframe(posts)
+
+    async def multiArchiveSearch(self, archives=[0, 1, 2, 3], **query):
+        tasks = [self.search(archive=idx, **query) for idx in archives]
+        search_results = await asyncio.gather(*tasks)
+
+        results = pd.concat(search_results, keys=[self.getArchiveName(i) for i in archives])
+        self.utilities.log(results.to_string(), folderName='multi')
+        self.log_dataframe(results, query=kwargs.get('text', ''), folderName='dumpster')
+
+        return results
+
+    async def calculate_statistics(self, results, text='', specific_board=None, specific_date=None):
+        if results.empty:
+            return 0, 0, 0.0, None
+
+        # Convert date column to datetime
+        results['date'] = pd.to_datetime(results['fourchan_date'], errors='coerce')
+        valid_results = results.dropna(subset=['date'])
+
+        if specific_board:
+            valid_results = valid_results[valid_results['board'] == specific_board]
+
+        if specific_date:
+            date_filter = (
+                valid_results['date'] < specific_date[1] if specific_date[0] == 'before' 
+                else valid_results['date'] > specific_date[1]
+            )
+            valid_results = valid_results[date_filter]
+
+        total_posts = len(valid_results)
+        posts_with_text = valid_results['comment'].str.contains(text, na=False).sum()
+
+        percentage = (posts_with_text / total_posts * 100) if total_posts > 0 else 0
+        mean_date = valid_results['date'].mean()
+
+        return total_posts, posts_with_text, percentage, mean_date
+
+    async def fetch_thread(self, session, archive_url, board, thread_num, semaphore, delay, **kwargs):
+        async with semaphore:
+            await asyncio.sleep(delay)
+            return await thread(archive_url, board=board, thread_num=thread_num, **kwargs)
+
+    def getText(self, posts_df):
+        """Convert posts DataFrame to text format."""
+        if posts_df.empty:
+            return []
+
+        return posts_df.apply(
+            lambda row: f"{row['num']} {row['fourchan_date']} {row.get('title', '')}\n{row['comment']}", axis=1
+        ).tolist()
+
+    def formatText(self, df, delim='\n\n'):
+        return delim.join(self.getText(df))
+
+    def qSearch(self, archive=0, **kwargs):
+        """Run a quick search synchronously and return results as DataFrame."""
+        return asyncio.run(self.search(archive, **kwargs))
+
+    def req(self):
+        """Synchronous search request with requests library."""
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36'
+        }
+        session = requests.Session()
+        session.headers.update(headers)
+        url = "https://archive.4plebs.org/_/api/chan/search"
+        response = session.get(url, params={'text': 'x'})
+
+        if response.status_code == 200:
+            print(pd.DataFrame(response.json()).to_string())
+        else:
+            print(f"Error {response.status_code}: {response.text}")
+    def getArchiveText(self, posts):
         try:
             result = []
             if isinstance(posts, Thread):
@@ -52,77 +225,6 @@ class MoeSearcher:
         except Exception as e:
             print(e)
             return None
-    async def fetch_search_result(self, session, archive, board, page, **kwargs):
-        return await search(archive, board=board, page=page, **kwargs)
-    async def search(self, archive=0, **kwargs):
-        posts = []
-        limit = kwargs.pop('limit', None)
-        board = kwargs.pop('board', '_')
-        delay = kwargs.pop('delay', 3.0)  # Default delay if not provided
-        semaphore_limit = kwargs.pop('semaphore', 5)  # Default semaphore limit if not provided
-        archive_url = self.getArchive(archive)
-
-        semaphore = asyncio.Semaphore(semaphore_limit)  # Limit concurrent tasks
-        i = 1
-        last_results = None
-        
-        async with aiohttp.ClientSession() as session:
-            while True:
-                tasks = []  # Create a new list for tasks each iteration
-                
-                for _ in range(semaphore_limit):
-                    async with semaphore:
-                        task = self.fetch_search_result(session, archive_url, board, i, **kwargs)
-                        tasks.append(task)
-                        i += 1
-                    
-                    # Introduce a delay between requests
-                    await asyncio.sleep(delay)
-
-                    if limit and len(tasks) >= limit:
-                        break
-
-                if not tasks:  # No more tasks to process
-                    break
-                print(f'{i}: {len(tasks)} {limit}')
-                # Gather results for the current batch
-                results = await asyncio.gather(*tasks)
-
-                if last_results is not None and not any(results):
-                    # If the last batch had no results, stop further requests
-                    break
-
-                last_results = results
-                for result in results:
-                    if result:
-                        posts.extend(result)
-                        if limit and len(posts) >= limit:
-                            return posts[:limit]
-                    else:
-                        break  # If no result, stop further requests
-        # Prepare log message and log the results
-        text = 'search'
-        text += kwargs.pop('-text', '')
-        text += kwargs.pop('-subject', '')
-        site = self.utilities.key_by_value(self.archivers, archive_url)
-        posts_dicts = self.utilities.process_posts(posts)
-        # Log the search results
-        self.utilities.json(
-            posts_dicts,
-            site=site,
-            board=board,
-            query=text,
-            folderName='search'
-        )
-        self.utilities.log(
-            message=self.toText(posts),
-            site=site,
-            board=board,
-            query=text,
-            folderName='search'
-        )
-        
-        return posts
     async def searchInSubject(self, archive=0, subject='', searchText='', **kwargs):
         archive_url = self.getArchive(archive)
         limit = kwargs.pop('limit', None)
@@ -154,11 +256,11 @@ class MoeSearcher:
             searchesCount = 0
             thread_tasks = []
             semaphore_limit = kwargs.pop('semaphore', 5)  # Default semaphore limit if not provided
-            delay = kwargs.pop('delay', 3.0)  # Default delay if not provided
+            delay = kwargs.pop('delay', 5.0)  # Default delay if not provided
 
             semaphore = asyncio.Semaphore(semaphore_limit)  # Limit concurrent tasks
             si = -1
-            for sub in subjects:
+            for sub in subjects.values():
                 si += 1
                 threadN = sub.thread_num
                 print(f'{si}/{len(subjects)}: {threadN}')
@@ -196,35 +298,6 @@ class MoeSearcher:
             # Introduce a delay before each request
             await asyncio.sleep(delay)
             return await thread(archive_url, board=board, thread_num=thread_num, **kwargs)
-    async def searchFast(self, archive=0, **kwargs):
-        posts = []
-        limit = kwargs.pop('limit', None)
-        board = kwargs.pop('board', '_')
-        archive_url = self.getArchive(archive)
-
-        async with aiohttp.ClientSession() as session:
-            tasks = []
-            i = 1
-            
-            while True:
-                tasks.append(self.fetch_search_result(session, archive_url, board, i, **kwargs))
-                i += 1
-                
-                if limit and len(tasks) >= limit:
-                    break
-
-            results = await asyncio.gather(*tasks)
-            
-            for result in results:
-                if result:
-                    posts.extend(result)
-                    if limit and len(posts) >= limit:
-                        return posts[:limit]
-                else:
-                    break
-
-        return posts
-
     def getArchive(self, archive=0):
         if isinstance(archive, int):
             index = archive
@@ -273,53 +346,6 @@ class MoeSearcher:
                            site="multi", board=query.get('board', '_'),
                            query=query.get('subject', 'N/A'), folderName='multi')
         return grouped_results
-
-    async def calculate_statistics(self, grouped_results, text='', subject=None, specific_board=None, specific_date=['before', None]):
-        total_posts = 0
-        posts_with_text = 0
-        post_dates = []
-
-        for source, data in grouped_results.items():
-            for post in data["results"]:
-                # Check if the post date is valid and meets criteria
-                try:
-                    post_date = datetime.strptime(post.fourchan_date, '%m/%d/%y(%a)%H:%M')
-                except ValueError as e:
-                    print(f"Date parsing error for post: {post.fourchan_date} - {e}")
-                    continue  # Skip this post if the date is invalid
-
-                if (specific_board is None or post.board.name == specific_board) and \
-                (specific_date is None or self.check_date(post_date, specific_date)):
-                    total_posts += 1
-                    post_dates.append(post_date)
-                    if text in post.comment:
-                        posts_with_text += 1
-        
-        # Calculate percentage
-        percentage = (posts_with_text / total_posts * 100) if total_posts > 0 else 0
-        
-        # Calculate mean date
-        mean_date = self.calculate_mean_date(post_dates) if post_dates else None
-        if post_dates:
-            # Create a graph
-            self.utilities.plot_statistics(post_dates)
-
-        return total_posts, posts_with_text, percentage, mean_date
-    def check_date(self, post_date, specific_date):
-        if specific_date == None:
-            return 0
-        if specific_date[0] == 'before':
-            return post_date < specific_date[1]
-        elif specific_date[0] == 'after':
-            return post_date > specific_date[1]
-        return True
-
-    def calculate_mean_date(self, dates):
-        if not dates:
-            return None
-        mean_timestamp = sum(date.timestamp() for date in dates) / len(dates)
-        return datetime.fromtimestamp(mean_timestamp)
-
     def groupArchives(self, results):
         grouped_results = {}
         for result in results:
@@ -332,28 +358,6 @@ class MoeSearcher:
             else:
                 grouped_results[source]["results"].extend(result["results"])
         return grouped_results
-
-    def req(self):
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36'
-        }
-        session = requests.Session()
-        session.headers.update(headers)
-        url = "https://archive.4plebs.org/_/api/chan/search"
-        response = session.get(url, params={'text': 'x'})
-
-        if response.status_code == 200:
-            print(response.json())  # Assuming the response is JSON
-        else:
-            print(f"Error {response.status_code}: {response.text}")
-
-    async def trysearch(self):
-        try:
-            search_results = await search("https://archive.4plebs.org", board="pol", text="brazil")
-            if search_results:
-                print(search_results[0].comment)
-        except Exception as e:
-            print(f"An error occurred: {e}")
     def qSearch(self, archive=0, **kwargs):
         """Run a quick search synchronously and log the results."""
         search_results = asyncio.run(self.search(archive, **kwargs))
@@ -375,12 +379,12 @@ class MoeSearcher:
 if __name__ == '__main__':
     searcher = MoeSearcher()
 
-    results = searcher.qSearch(0, text='trocr')
+    results = searcher.qSearch(0, text='sylphy')
     #results = searcher.qSearch(0, text='aparecida', limit=35)
     #print(results)
     #print(searcher.getText(results))
     
-    results = asyncio.run(searcher.searchInSubject(0, subject='', searchText='"film theory', board='a'))
+    results = asyncio.run(searcher.searchInSubject(0, subject='mushoku', searchText='"fitz"'))
     print(results)
 
     query = 'binomial|pull|gacha|lootbox|game'
