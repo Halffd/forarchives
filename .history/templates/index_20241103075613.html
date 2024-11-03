@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MoeSearcher</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #ffffff;
+        }
+        #searchForm {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            padding: 10px;
+            font-size: 1em;
+            background-color: #333333;
+            color: #ffffff;
+            border: 1px solid #444;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 1em;
+            color: #ffffff;
+            background-color: #6200ea;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #3700b3;
+        }
+        .archive-option {
+            display: inline-block;
+            margin-right: 10px;
+        }
+        #results {
+            margin-top: 20px;
+        }
+        .result-container {
+            border: 1px solid #333;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #1e1e1e;
+            border-radius: 8px;
+        }
+        .result-title {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #bb86fc;
+        }
+        .result-meta {
+            color: #999;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        .result-comment {
+            margin-top: 10px;
+        }
+        .result-media a {
+            color: #03dac6;
+            text-decoration: none;
+        }
+        .result-media a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Search Archive</h1>
+    <form id="searchForm">
+        <input type="text" name="query" placeholder="Enter search text" required>
+        <div>
+            <label class="archive-option">
+                <input type="checkbox" name="archives" value="0"> Desuarchive
+            </label>
+            <label class="archive-option">
+                <input type="checkbox" name="archives" value="1"> Palanq
+            </label>
+            <label class="archive-option">
+                <input type="checkbox" name="archives" value="2"> Moe
+            </label>
+            <label class="archive-option">
+                <input type="checkbox" name="archives" value="3"> 4plebs
+            </label>
+            <label class="archive-option">
+                <input type="checkbox" name="archives" value="4"> b4k
+            </label>
+        </div>
+        <button type="submit">Search</button>
+    </form>
+    <div id="results"></div>
+    
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const selectedArchives = formData.getAll("archives");  // Get all selected archives
+            
+            if (selectedArchives.length === 0) {
+                alert("Please select at least one archive.");
+                return;
+            }
+
+            const searchParams = new URLSearchParams();
+            searchParams.append('query', formData.get("query"));
+            searchParams.append('archives', JSON.stringify(selectedArchives));  // Send archives as JSON array
+
+            const response = await fetch('/search', {
+                method: 'POST',
+                body: searchParams
+            });
+            const result = await response.json();
+            displayResults(result);
+        });
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+        
+            if (data.error) {
+                resultsDiv.textContent = "Error: " + data.error;
+            } else if (Array.isArray(data.results) && data.results.length > 0) {
+                // Loop through each result object in the results array
+                let i = 
+                data.results.forEach(resultObj => {
+                    // Loop through each key in the result object
+                    for (const key in resultObj) {
+                        const post = resultObj[key];
+                        
+                        // Skip null posts
+                        if (post === null) continue;
+        
+                        const postDiv = document.createElement('div');
+                        postDiv.classList.add('result-container');
+        
+                        postDiv.innerHTML = `
+                            <div class="result-title">Post ID: ${post.num}</div>
+                            <div class="result-meta">
+                                <span><strong>Thread Number:</strong> ${post.thread_num}</span> | 
+                                <span><strong>Timestamp:</strong> ${new Date(post.timestamp * 1000).toLocaleString()}</span>
+                            </div>
+                            <div class="result-comment">${post.comment || "No Comment"}</div>
+                            <div class="result-media">
+                                ${post.media && post.media.media_orig ? `<strong>Media:</strong> <a href="${post.media.media_orig}" download>Download</a>` : ""}
+                            </div>
+                            <div class="result-board"><strong>Board:</strong> ${post.board}</div>
+                        `;
+        
+                        resultsDiv.appendChild(postDiv);
+                    }
+                });
+            } else {
+                resultsDiv.textContent = "No results found.";
+            }
+        }        
+    </script>
+</body>
+</html>
