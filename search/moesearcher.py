@@ -1,10 +1,10 @@
-from .async_api import *
+from async_api import *
 from moesearch.parser import *
 import requests
 import asyncio
 import aiohttp
 from datetime import datetime
-from search.utilities import Utilities
+from utilities import Utilities
 import pandas as pd
 import os
 class MoeSearcher:
@@ -15,7 +15,8 @@ class MoeSearcher:
             "palanq": "https://archive.palanq.win",
             "moe": "https://archived.moe",
             "4plebs": "https://archive.4plebs.org",
-            "b4k": "https://arch.b4k.co"
+            "b4k": "https://arch.b4k.co",
+            "warosu": "https://warosu.org/jp/search/text/"
         }
         self.utilities = Utilities()
         print = self.utilities.printLog
@@ -95,6 +96,7 @@ class MoeSearcher:
             page = 1  # Start with page 1
 
             while True:
+                print(page)
                 # Create new tasks within each iteration to avoid reuse errors
                 tasks = [
                     asyncio.create_task(
@@ -434,19 +436,19 @@ if __name__ == '__main__':
     searcher = MoeSearcher()
     #p = asyncio.run(post(searcher.getArchive(0), 'a', 271697570))
     #df = searcher.posts_to_dataframe(p)
-    results = searcher.qSearch(0, text='"exploding head syndrome"')
+    results = searcher.qSearch(0, text='include iostream|fstream|cassert|cstdio|cstring|iomanip|sstream|"int main"|"glm.h"|"gl.h"|"glut.h"|"glad.h"|"vulkan.h"|"windows.h"|"FlexLexer.h"|"_ansi.h"|"_newlib_version.h"|"_syslist.h"|"a.out.h"|"aio.h"|"alloca.h"|"alpm.h"|"alpm_list.h"|"ansidecl.h"|"ar.h"|"argz.h"|"assert.h"|"bfd.h"|"bfdlink.h"|"byteswap.h"|"complex.h"|"cpio.h"|"ctf-api.h"|"ctf.h"|"ctype.h"|"devctl.h"|"diagnostics.h"|"dirent.h"|"dis-asm.h"|"dlfcn.h"|"elf.h"|"endian.h"|"envlock.h"|"envz.h"|"err.h"|"errno.h"|"error.h"|"fastmath.h"|"fcntl.h"|"features.h"|"fenv.h"|"fnmatch.h"|"fts.h"|"ftw.h"|"gawkapi.h"|"getopt.h"|"glob.h"|"gnumake.h"|"grp.h"|"icmp.h"|"ieeefp.h"|"ifaddrs.h"|"inttypes.h"|"io.h"|"langinfo.h"|"lastlog.h"|"libgen.h"|"limits.h"|"locale.h"|"magic.h"|"malloc.h"|"math.h"|"memory.h"|"mntent.h"|"monetary.h"|"mqueue.h"|"ndbm.h"|"netdb.h"|"newlib.h"|"nl_types.h"|"paths.h"|"plugin-api.h"|"poll.h"|"process.h"|"pthread.h"|"pty.h"|"pwd.h"|"reent.h"|"regdef.h"|"regex.h"|"resolv.h"|"sched.h"|"search.h"|"semaphore.h"|"setjmp.h"|"sframe-api.h"|"sframe.h"|"signal.h"|"spawn.h"|"stdatomic.h"|"stdint.h"|"stdio.h"|"stdio_ext.h"|"stdlib.h"|"string.h"|"strings.h"|"symcat.h"|"sysexits.h"|"syslog.h"|"tar.h"|"termio.h"|"termios.h"|"tgmath.h"|"threads.h"|"time.h"|"tzfile.h"|"uchar.h"|"ucontext.h"|"unistd.h"|"utime.h"|"utmp.h"|"utmpx.h"|"wait.h"|"wchar.h"|"wctype.h"|"wordexp.h"', limit=1500)
     #results = searcher.qSearch(0, text='aparecida', limit=35)
     #print(results)
     #print(searcher.getText(results))
-    
-    query = '"autism spectrum"'
-    results = asyncio.run(searcher.searchInSubject(0, subject='pokemon', searchText=query))
-    print(results)
+    if False:
+        query = '"autism spectrum"'
+        results = asyncio.run(searcher.searchInSubject(0, subject='pokemon', searchText=query))
+        print(results)
 
-    grouped_results = asyncio.run(searcher.multiArchiveSearch([0, 1], text=query))
-    
-    total_posts, posts_with_text, percentage, mean_date = asyncio.run(searcher.calculate_statistics(grouped_results, '+'))
-    print(f"Total posts: {total_posts}")
-    print(f"Posts with text: {posts_with_text}")
-    print(f"Percentage of posts with text: {percentage:.2f}%")
-    print(f"Mean date of posts: {mean_date}")
+        grouped_results = asyncio.run(searcher.multiArchiveSearch([0, 1], text=query))
+        
+        total_posts, posts_with_text, percentage, mean_date = asyncio.run(searcher.calculate_statistics(grouped_results, '+'))
+        print(f"Total posts: {total_posts}")
+        print(f"Posts with text: {posts_with_text}")
+        print(f"Percentage of posts with text: {percentage:.2f}%")
+        print(f"Mean date of posts: {mean_date}")

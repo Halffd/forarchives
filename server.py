@@ -11,6 +11,9 @@ class MainHandler(tornado.web.RequestHandler):
     def get(self):
         # Serve the main search page
         self.render("index.html")
+class StaticFileHandler(tornado.web.StaticFileHandler):
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
 
 class SearchHandler(tornado.web.RequestHandler):
     async def post(self):
@@ -71,6 +74,7 @@ def make_app():
     return tornado.web.Application([
         (r"/", MainHandler),
         (r"/search", SearchHandler),
+        (r"/static/(.*)", StaticFileHandler, {"path": "static"}),
     ], template_path="templates", debug=True)
 
 if __name__ == "__main__":
