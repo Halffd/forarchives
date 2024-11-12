@@ -10,7 +10,7 @@ import json
 class Utilities:
     def __init__(self, log_dir="logs"):
         self.log_dirname = log_dir
-        base = os.path.dirname(sys.argv[0])
+        base = "D:/LOGS/forarchives" # os.path.dirname(sys.argv[0])
         self.log_dir = os.path.join(base, self.log_dirname)
         self.create_log_directory()
         self.print = print
