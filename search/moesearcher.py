@@ -1,10 +1,10 @@
-from async_api import *
+from .async_api import *
 from moesearch.parser import *
 import requests
 import asyncio
 import aiohttp
 from datetime import datetime
-from utilities import Utilities
+from .utilities import Utilities
 import pandas as pd
 import os
 class MoeSearcher:
