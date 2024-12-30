@@ -1,0 +1,5 @@
+ moesearch
+ pandas
+ bs4
+ aiohttp
+ matplotlib
