@@ -1,8 +1,73 @@
-logs
-__pycache__
-search/__pycache__
-search/logs
-search/.cache
-.history
-.cache
-D:
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+.env/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Build outputs
+dist/
+build/
+release/
+*.egg-info/
+*.egg
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+coverage/
+.nyc_output/
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+logs/
+
+# Application specific
+.nx/
+.angular/
+.ionic/
+.capacitor/
+www/
+resources/
+platforms/
+plugins/
+temp/
+tmp/
+
+# Large files and caches
+.angular/cache/
+node_modules/@rspack/binding-*/
+node_modules/@swc/core-*/
+*.pack
+daemon.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# Misc
+*.bak
+*.tmp
+*.temp

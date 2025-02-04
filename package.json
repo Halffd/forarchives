@@ -1,0 +1,103 @@
+{
+  "name": "forarchives",
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {
+    "start": "nx serve",
+    "server": "python3 src/server/server.py",
+    "build": "nx build",
+    "test": "nx test",
+    "test:ui": "playwright test src/tests/ui",
+    "test:api": "playwright test src/tests/api",
+    "test:all": "npm run test:ui && npm run test:api",
+    "cli": "ts-node src/cli/cli.ts",
+    "electron:serve": "nx build --configuration=desktop && electron .",
+    "electron:build": "nx build --configuration=desktop && electron-builder",
+    "desktop": "npm run electron:serve"
+  },
+  "bin": {
+    "forarchives": "./dist/cli/cli.js"
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/animations": "^19.1.4",
+    "@angular/cdk": "^19.1.2",
+    "@angular/common": "^19.1.4",
+    "@angular/compiler": "^19.1.4",
+    "@angular/core": "^19.1.4",
+    "@angular/forms": "^19.1.4",
+    "@angular/material": "^19.1.2",
+    "@angular/platform-browser": "^19.1.4",
+    "@angular/platform-browser-dynamic": "^19.1.4",
+    "@angular/platform-server": "^19.1.4",
+    "@angular/router": "^19.1.4",
+    "@angular/service-worker": "^19.1.4",
+    "@capacitor/android": "^7.0.1",
+    "@capacitor/core": "^7.0.1",
+    "@capacitor/ios": "^7.0.1",
+    "@ionic/angular": "^8.4.3",
+    "@nx/playwright": "^20.4.0",
+    "commander": "^11.0.0",
+    "express": "^4.21.2",
+    "nx": "^20.4.0",
+    "rxjs": "^7.8.1",
+    "sass": "^1.83.4",
+    "tslib": "^2.8.1",
+    "zone.js": "^0.15.0"
+  },
+  "devDependencies": {
+    "@nx/eslint-plugin": "^20.4.0",
+    "@playwright/test": "^1.40.0",
+    "@types/commander": "^2.12.2",
+    "eslint-plugin": "^1.0.1",
+    "typescript-eslint": "^8.23.0"
+  },
+  "nx": {
+    "includedScripts": []
+  },
+  "build": {
+    "appId": "com.forarchives.app",
+    "productName": "Archive Search",
+    "directories": {
+      "output": "release/"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "src/server",
+        "to": "server",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "python",
+        "to": "python",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "src/assets/icons/icon.ico"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "icon": "src/assets/icons/icon.icns"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "src/assets/icons/icon.png"
+    }
+  }
+}
