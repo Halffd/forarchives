@@ -1,0 +1,71 @@
+
+Here's a list of 4chan archive sites using either Fuuka or FoolFuuka software. Boards with full image archival are in bold.
+
+Archive	Status	Software	Boards archived
+4plebs	Online	foolfuuka	/adv/ /f/ /hr/ /mlpol/ /mo/ /o/ /pol/ /s4s/ /sp/ /tg/ /trv/ /tv/ /x/
+warosu	Online	fuuka	/3/ /biz/ /cgl/ /ck/ /diy/ /fa/ /ic/ /jp/ /lit/ /sci/ /vr/ /vt/
+Desuarchive	Online	foolfuuka	/a/ /aco/ /an/ /c/ /cgl/ /co/ /d/ /fit/ /g/ /his/ /int/ /k/ /m/ /mlp/ /mu/ /q/ /qa/ /r9k/ /tg/ /trash/ /vr/ /wsg/
+fireden.net	Online	foolfuuka	/cm/ /co/ /ic/ /sci/ /vip/ /y/
+arch.b4k.co	Online	foolfuuka	/g/ /mlp/ /qb/ /v/ /vg/ /vm/ /vmg/ /vp/ /vrpg/ /vst/
+Archived.Moe	Online	foolfuuka	/3/ /a/ /aco/ /adv/ /an/ /asp/ /b/ /bant/ /biz/ /c/ /can/ /cgl/ /ck/ /cm/ /co/ /cock/ /con/ /d/ /diy/ /e/ /f/ /fa/ /fap/ /fit/ /fitlit/ /g/ /gd/ /gif/ /h/ /hc/ /his/ /hm/ /hr/ /i/ /ic/ /int/ /jp/ /k/ /lgbt/ /lit/ /m/ /mlp/ /mlpol/ /mo/ /mtv/ /mu/ /n/ /news/ /o/ /out/ /outsoc/ /p/ /po/ /pol/ /pw/ /q/ /qa/ /qb/ /qst/ /r/ /r9k/ /s/ /s4s/ /sci/ /soc/ /sp/ /spa/ /t/ /tg/ /toy/ /trash/ /trv/ /tv/ /u/ /v/ /vg/ /vint/ /vip/ /vm/ /vmg/ /vp/ /vr/ /vrpg/ /vst/ /vt/ /w/ /wg/ /wsg/ /wsr/ /x/ /xs/ /y/
+TheBArchive.com	Online	foolfuuka	/b/ /bant/
+Archive Of Sins	Online	foolfuuka	/h/ /hc/ /hm/ /i/ /lgbt/ /r/ /s/ /soc/ /t/ /u/
+palanq.win	Online	foolfuuka	/bant/ /c/ /con/ /e/ /i/ /n/ /news/ /out/ /p/ /pw/ /qst/ /toy/ /vip/ /vp/ /vt/ /w/ /wg/ /wsr/
+Eientei	Online	Eientei	/3/ /i/ /sci/ /xs/
+4plebs dumps
+Every month we remove old full images and upload them to archive.org. As of 2017 old images no longer deleted. You can download dumps from archive.org. In March & June & July & August 2016 we had 2 data purges.
+Shell scripts for downloading all dumps.
+
+Date	Link	Size	Older than
+September 2015	https://archive.org/details/4plebs (uploaded by antonizoon)	119G	
+October 2015	https://archive.org/details/4plebs-org-image-dump-2015-10	124G	17m
+November 2015	https://archive.org/details/4plebs-org-image-dump-2015-11 [1]	230G	16m
+December 2015	https://archive.org/details/4plebs-org-image-dump-2015-12	166G	16m
+January 2016	https://archive.org/details/4plebs-org-image-dump-2016-01	147G	16m
+February 2016	https://archive.org/details/4plebs-org-image-dump-2016-02	107G	16m
+March 2016	https://archive.org/details/4plebs-org-image-dump-2016-03	405G	16m & 14m
+April 2016	https://archive.org/details/4plebs-org-image-dump-2016-04	159G	14m
+May 2016	https://archive.org/details/4plebs-org-image-dump-2016-05	89G	14m
+June 2016	https://archive.org/details/4plebs-org-image-dump-2016-06	260G	14m & 13m
+July 2016	https://archive.org/details/4plebs-org-image-dump-2016-07	246G	13m
+July 2016	https://archive.org/details/4plebs-org-swf-dump-2016-07 [2]	112G	
+August 2016	https://archive.org/details/4plebs-org-image-dump-2016-08	272G	12m
+September 2016	https://archive.org/details/4plebs-org-image-dump-2016-09 [3]	168G	12m
+October 2016	https://archive.org/details/4plebs-org-image-dump-2016-10	133G	12m
+November 2016	https://archive.org/details/4plebs-org-image-dump-2016-11	318G	11m
+November 2016	https://archive.org/details/4plebs-org-thumbnail-dump-2016-11 [4]	81G	
+December 2016	https://archive.org/details/4plebs-org-image-dump-2016-12	270G	11m
+January 2017	https://archive.org/details/4plebs-org-data-dump-2017-01 [5]	19.7G	
+June 2017	https://archive.org/details/4plebs-org-data-dump-2017-06 [5]	22.9G	
+June 2017	https://archive.org/details/4plebs-org-thumbnail-dump-2017-06 [4]	71G	
+June 2017	https://archive.org/details/4plebs-org-image-dump-2017-06
+and 2, 3, 4, 5 [6]	~5TB	
+January 2018	https://archive.org/details/4plebs-org-thumbnail-dump-2018-01 [4]	78GB	
+January 2018	https://archive.org/details/4plebs-org-data-dump-2018-01 [5]	28.4GB	
+January 2018	https://archive.org/details/4plebs-org-image-dump-2018-01
+and 2, 3, 4, 5, 6, 7, 8, 9 [6]	~9TB	
+January 2019	https://archive.org/details/4plebs-org-data-dump-2019-01 [5]	37GB	
+January 2019	https://archive.org/details/4plebs-org-thumbnail-dump-2019-01 [4]	104GB	
+January 2019	https://archive.org/details/4plebs-org-image-dump-2019-01
+and 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 [6]	~10TB	
+January 2020	https://archive.org/details/4plebs-org-data-dump-2020-01 [5]	44GB	
+January 2020	https://archive.org/details/4plebs-org-thumbnail-dump-2020-01 [4]	121GB	
+January 2020	https://archive.org/details/4plebs-org-image-dump-2020-01
+and 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 [6]	~14TB	
+June 2020	https://archive.org/details/not4plebs-org-data-dump-2020-06 [5]	24GB	
+June 2020	https://archive.org/details/not4plebs-org-thumbnail-dump-2020-06 [4]	14GB	
+June 2020	https://archive.org/details/not4plebs-org-image-dump-2020-06
+and 2 [6]	~4TB	
+July 2020	https://archive.org/details/4plebs-org-data-dump-2020-07 [5]	48GB	
+February 2021	https://archive.org/details/4plebs-org-data-dump-2021-02 [5]	54GB	
+February 2021	https://archive.org/details/4plebs-org-thumbnail-dump-2021-02 [4]	145GB	
+February 2021	https://archive.org/details/4plebs-org-image-dump-2021-02
+and 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 [6]	~16TB	
+January 2022	https://archive.org/details/4plebs-org-data-dump-2022-01 [5]	64GB	
+January 2022	https://archive.org/details/4plebs-org-thumbnail-dump-2022-01 [4]	164GB	
+January 2022	https://archive.org/details/4plebs-org-image-dump-2022-01-part1
+and 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 [6]	~18TB	
+January 2024	https://archive.org/details/4plebs-org-data-dump-2024-01 [5]	78GB	
+January 2024	https://archive.org/details/4plebs-org-thumbnail-dump-2024-01 [4]	187GB	
+January 2024	https://archive.org/details/4plebs-org-image-dump-2024-01-part1
+and 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28 [6]	~27TB	
