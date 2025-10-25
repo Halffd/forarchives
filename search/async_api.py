@@ -1,18 +1,25 @@
 import asyncio
 import aiohttp
 from .moesearch import *
-from moesearch.exceptions import ArchiveException
+from .exceptions import ArchiveException
 import time
 import os
 import json
-import undetected_chromedriver as uc
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import logging
 from pathlib import Path
-import browser_cookie3
 from bs4 import BeautifulSoup
+
+# Optional imports that may not be available
+try:
+    import undetected_chromedriver as uc
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    import browser_cookie3
+    CHROMEDRIVER_AVAILABLE = True
+except ImportError:
+    CHROMEDRIVER_AVAILABLE = False
+    print("Warning: undetected_chromedriver, selenium, or browser_cookie3 not available. Some functionality may be limited.")
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -37,6 +44,9 @@ class PlebsSession:
     
     def _setup_chrome_options(self):
         """Configure Chrome options for stealth operation"""
+        if not CHROMEDRIVER_AVAILABLE:
+            raise ImportError("undetected_chromedriver is not available. Please install it to use this functionality.")
+        
         options = uc.ChromeOptions()
         options.add_argument('--start-maximized')
         options.add_argument('--no-sandbox')
@@ -49,6 +59,10 @@ class PlebsSession:
         return options
     
     def _get_chrome_cookies(self):
+        if not CHROMEDRIVER_AVAILABLE:
+            logger.warning("browser_cookie3 not available, cannot get Chrome cookies")
+            return []
+        
         try:
             chrome_cookies = browser_cookie3.chrome(domain_name='4plebs.org')
             return [{'name': c.name, 'value': c.value, 'domain': c.domain} for c in chrome_cookies]
@@ -67,6 +81,10 @@ class PlebsSession:
     
     async def wait_for_cloudflare(self, driver):
         """Wait for Cloudflare challenge to be solved"""
+        if not CHROMEDRIVER_AVAILABLE:
+            logger.error("Selenium not available, cannot wait for Cloudflare")
+            return False
+            
         logger.info("Waiting for Cloudflare challenge...")
         try:
             # Wait for the main content to be visible (after Cloudflare)
@@ -80,6 +98,10 @@ class PlebsSession:
             return False
     
     async def init_session(self, force=False):
+        if not CHROMEDRIVER_AVAILABLE:
+            logger.warning("Chrome driver not available, cannot initialize 4plebs session")
+            return False
+        
         current_time = time.time()
         if not force and self._last_init and (current_time - self._last_init) < self.INIT_COOLDOWN:
             if self._cookies:
@@ -426,8 +448,12 @@ def cleanup():
             logger.error(f"Error during cleanup: {e}")
     
     try:
+        # Check if there's an event loop available
         loop = asyncio.get_event_loop()
         loop.run_until_complete(close_session())
+    except RuntimeError:
+        # No event loop in this thread, create a new one
+        asyncio.run(close_session())
     except Exception as e:
         logger.error(f"Error during cleanup loop: {e}")
 

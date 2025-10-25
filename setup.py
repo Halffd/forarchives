@@ -9,6 +9,9 @@ setup(
         'pandas',
         'requests',
         'beautifulsoup4',
-        'tornado'
+        'tornado',
+        'undetected-chromedriver',
+        'selenium',
+        'browser-cookie3'
     ],
 ) 
