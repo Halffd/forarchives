@@ -5,13 +5,13 @@ setup(
     version="0.1.0",
     packages=find_packages(),
     install_requires=[
-        'aiohttp',
-        'pandas',
-        'requests',
-        'beautifulsoup4',
-        'tornado',
-        'undetected-chromedriver',
-        'selenium',
-        'browser-cookie3'
+        "aiohttp",
+        "pandas",
+        "requests",
+        "beautifulsoup4",
+        "tornado",
+        "undetected-chromedriver",
+        "selenium",
+        "browser-cookie3",
     ],
-) 
+)

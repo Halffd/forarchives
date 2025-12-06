@@ -13,37 +13,48 @@ if server_dir not in sys.path:
 
 from search.moesearcher import MoeSearcher
 
+
 async def main():
-    parser = argparse.ArgumentParser(description='ForArchives Statistics CLI')
-    parser.add_argument('--archives', type=str, default='[0,1,2,3]', help='JSON array of archive indices')
-    parser.add_argument('--board', help='Board to analyze')
-    parser.add_argument('--date', help='Date range (YYYY-MM-DD:YYYY-MM-DD)')
-    parser.add_argument('--format', choices=['json', 'text', 'csv'], default='text', help='Output format')
-    
+    parser = argparse.ArgumentParser(description="ForArchives Statistics CLI")
+    parser.add_argument(
+        "--archives",
+        type=str,
+        default="[0,1,2,3]",
+        help="JSON array of archive indices",
+    )
+    parser.add_argument("--board", help="Board to analyze")
+    parser.add_argument("--date", help="Date range (YYYY-MM-DD:YYYY-MM-DD)")
+    parser.add_argument(
+        "--format",
+        choices=["json", "text", "csv"],
+        default="text",
+        help="Output format",
+    )
+
     args = parser.parse_args()
     archives = json.loads(args.archives)
-    
+
     searcher = MoeSearcher()
     date_range = None
     if args.date:
-        start, end = args.date.split(':')
+        start, end = args.date.split(":")
         date_range = (
-            datetime.strptime(start, '%Y-%m-%d'),
-            datetime.strptime(end, '%Y-%m-%d')
+            datetime.strptime(start, "%Y-%m-%d"),
+            datetime.strptime(end, "%Y-%m-%d"),
         )
-    
+
     results = await searcher.calculate_statistics(
-        archives=archives,
-        board=args.board,
-        date_range=date_range
+        archives=archives, board=args.board, date_range=date_range
     )
-    
-    if args.format == 'json':
+
+    if args.format == "json":
         print(json.dumps(results, indent=2))
-    elif args.format == 'csv':
-        print('archive,total_posts,active_threads,avg_posts_per_thread')
+    elif args.format == "csv":
+        print("archive,total_posts,active_threads,avg_posts_per_thread")
         for archive, stats in results.items():
-            print(f"{archive},{stats['total_posts']},{stats['active_threads']},{stats['avg_posts_per_thread']:.2f}")
+            print(
+                f"{archive},{stats['total_posts']},{stats['active_threads']},{stats['avg_posts_per_thread']:.2f}"
+            )
     else:
         for archive, stats in results.items():
             print(f"\nArchive: {archive}")
@@ -51,5 +62,6 @@ async def main():
             print(f"Active Threads: {stats['active_threads']}")
             print(f"Average Posts per Thread: {stats['avg_posts_per_thread']:.2f}")
 
-if __name__ == '__main__':
-    asyncio.run(main()) 
+
+if __name__ == "__main__":
+    asyncio.run(main())

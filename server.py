@@ -13,16 +13,22 @@ import redis
 import hashlib
 import time
 
+
 class AngularHandler(tornado.web.StaticFileHandler):
     def parse_url_path(self, url_path):
         """Serve index.html for all Angular routes"""
         if not url_path or not os.path.exists(os.path.join(self.root, url_path)):
-            return 'index.html'
+            return "index.html"
         return url_path
 
+
 class RedisCacheManager:
-    def __init__(self, host='localhost', port=6379, db=0, password=None, default_ttl=3600):
-        self.redis_client = redis.Redis(host=host, port=port, db=db, password=password, decode_responses=True)
+    def __init__(
+        self, host="localhost", port=6379, db=0, password=None, default_ttl=3600
+    ):
+        self.redis_client = redis.Redis(
+            host=host, port=port, db=db, password=password, decode_responses=True
+        )
         self.default_ttl = default_ttl  # Default TTL in seconds (1 hour)
 
     def generate_cache_key(self, params):
@@ -50,7 +56,9 @@ class RedisCacheManager:
             self.redis_client.setex(
                 cache_key,
                 ttl,
-                json.dumps(result, default=str)  # Use default=str to handle datetime objects
+                json.dumps(
+                    result, default=str
+                ),  # Use default=str to handle datetime objects
             )
         except Exception as e:
             print(f"Error setting cached result: {e}")
@@ -62,6 +70,7 @@ class RedisCacheManager:
             return True
         except Exception:
             return False
+
 
 # Initialize the cache manager
 cache_manager = RedisCacheManager()
@@ -89,14 +98,16 @@ class SearchHandler(tornado.web.RequestHandler):
             subject_only = data.get("subjectOnly", False)
 
             # Generate cache key based on search parameters
-            cache_key = cache_manager.generate_cache_key({
-                "query": query,
-                "archives": archives,
-                "board": board,
-                "useRegex": use_regex,
-                "limit": limit,
-                "subjectOnly": subject_only
-            })
+            cache_key = cache_manager.generate_cache_key(
+                {
+                    "query": query,
+                    "archives": archives,
+                    "board": board,
+                    "useRegex": use_regex,
+                    "limit": limit,
+                    "subjectOnly": subject_only,
+                }
+            )
 
             # Try to get cached result first
             cached_result = cache_manager.get_cached_result(cache_key)
@@ -107,30 +118,32 @@ class SearchHandler(tornado.web.RequestHandler):
 
             # If not in cache, perform the search
             moe_searcher = MoeSearcher()
-            
+
             # Prepare search parameters
-            search_kwargs = {
-                "text": query,
-                "board": board,
-                "limit": limit
-            }
-            
+            search_kwargs = {"text": query, "board": board, "limit": limit}
+
             # Add regex parameter if supported by the search method
             if use_regex:
-                search_kwargs["regex"] = query  # This would need to be handled by the backend
-            
+                search_kwargs["regex"] = (
+                    query  # This would need to be handled by the backend
+                )
+
             # Add subject only parameter if needed
             if subject_only:
                 search_kwargs["subject"] = query  # Search in subject field
 
             if len(archives) > 1:
-                search_results = await moe_searcher.multiArchiveSearch(archives=archives, **search_kwargs)
+                search_results = await moe_searcher.multiArchiveSearch(
+                    archives=archives, **search_kwargs
+                )
             else:
-                search_results = await moe_searcher.search(archive=archives[0], **search_kwargs)
+                search_results = await moe_searcher.search(
+                    archive=archives[0], **search_kwargs
+                )
 
             # Process the results
             processed_results = self.process_results(search_results)
-            
+
             # Cache the results (only if caching is available)
             if cache_manager.is_cache_warm():
                 cache_manager.set_cached_result(cache_key, processed_results)
@@ -148,20 +161,17 @@ class SearchHandler(tornado.web.RequestHandler):
             results = search_results.to_dict(orient="records")
         elif isinstance(search_results, dict):
             for archive_name, archive_data in search_results.items():
-                board = archive_data.get('board', '_')
-                for result in archive_data.get('results', []):
-                    results.append({
-                        "source": archive_name,
-                        "board": board,
-                        **result
-                    })
+                board = archive_data.get("board", "_")
+                for result in archive_data.get("results", []):
+                    results.append({"source": archive_name, "board": board, **result})
         return results
+
 
 def make_app(is_desktop=False):
     settings = {
         "debug": True,
         "static_path": STATIC_PATH,
-        "template_path": TEMPLATE_PATH
+        "template_path": TEMPLATE_PATH,
     }
 
     if is_desktop:
@@ -169,15 +179,24 @@ def make_app(is_desktop=False):
 
     handlers = [
         (r"/api/search", SearchHandler),
-        (r"/manifest\.webmanifest", tornado.web.StaticFileHandler, {"path": ANGULAR_DIST}),
+        (
+            r"/manifest\.webmanifest",
+            tornado.web.StaticFileHandler,
+            {"path": ANGULAR_DIST},
+        ),
         (r"/ngsw\.json", tornado.web.StaticFileHandler, {"path": ANGULAR_DIST}),
         (r"/ngsw-worker\.js", tornado.web.StaticFileHandler, {"path": ANGULAR_DIST}),
         (r"/safety-worker\.js", tornado.web.StaticFileHandler, {"path": ANGULAR_DIST}),
-        (r"/worker-basic\.min\.js", tornado.web.StaticFileHandler, {"path": ANGULAR_DIST}),
+        (
+            r"/worker-basic\.min\.js",
+            tornado.web.StaticFileHandler,
+            {"path": ANGULAR_DIST},
+        ),
         (r"/(.*)", AngularHandler, {"path": ANGULAR_DIST}),
     ]
 
     return tornado.web.Application(handlers, **settings)
+
 
 if __name__ == "__main__":
     is_desktop = "--desktop" in sys.argv
